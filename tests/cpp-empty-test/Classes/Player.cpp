@@ -12,26 +12,34 @@ Player* Player::create(const std::string& filename) {
     return nullptr;
 }
 
-bool Player::init(const std::string& filename) {
-    if (!Sprite::initWithFile(filename)) {
+bool Player::init(const std::string& filename) 
+{
+    if (!Sprite::initWithFile(filename)) 
+    {
         return false;
     }
 
     jumping = false;
-    jumpForce = 300.0f;
-    gravity = -980.0f;
-    groundY = 100.0f;
+    jumpForce = 600.0f;  
+    gravity = -1200.0f;
 
     auto body = PhysicsBody::createBox(this->getContentSize());
     body->setDynamic(true);
     body->setGravityEnable(true);
-    body->setCategoryBitmask(0x01);    // Player category
-    body->setContactTestBitmask(0x02); // Obstacle category
+    body->setRotationEnable(false);
+    body->setCategoryBitmask(0x01);
+    body->setContactTestBitmask(0x02 | 0x04);
+
+    body->setMass(1.0f);
+
     this->setPhysicsBody(body);
 
-    this->scheduleUpdate();
-
     return true;
+}
+
+void Player::setGrounded(bool grounded) {
+    this->getPhysicsBody()->setGravityEnable(!grounded);
+    jumping = !grounded;
 }
 
 void Player::jump() {

@@ -23,6 +23,9 @@ bool HelloWorld::init()
     }
 
     restartButton = nullptr;
+    groundHeight = 100.0f;
+
+    createGround();
 
     Size visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
@@ -36,9 +39,10 @@ bool HelloWorld::init()
 
     // Create player
     player = Player::create("icons/000.png");  
-    player->setPosition(Vec2(visibleSize.width * 0.2f, 100));
-    this->addChild(player);
-    player->setTag(1); 
+    float playerSpawnY = groundHeight + (player->getContentSize().height / 2);
+    player->setPosition(Vec2(visibleSize.width * 0.2f, playerSpawnY));
+    player->setTag(1);
+    this->addChild(player);;
 
     // Score labels
     scoreLabel = Label::createWithTTF("Score: 0", "fonts/arial.ttf", 24);
@@ -99,7 +103,14 @@ void HelloWorld::spawnObstacle() {
     Size visibleSize = Director::getInstance()->getVisibleSize();
 
     auto obstacle = Obstacle::create("icons/Runic Dagger.png");  
-    obstacle->setPosition(Vec2(visibleSize.width + obstacle->getContentSize().width / 2, 100));
+
+
+    float obstacleSpawnY = groundHeight + (obstacle->getContentSize().height / 2);
+    obstacle->setPosition(Vec2(
+        visibleSize.width + obstacle->getContentSize().width / 2,
+        obstacleSpawnY
+    ));
+
     obstacle->startMoving(300.0f);
     this->addChild(obstacle);
 }
@@ -107,6 +118,8 @@ void HelloWorld::spawnObstacle() {
 bool HelloWorld::onContactBegin(PhysicsContact& contact) {
     auto nodeA = contact.getShapeA()->getBody()->getNode();
     auto nodeB = contact.getShapeB()->getBody()->getNode();
+
+
 
     if ((nodeA && nodeB) &&
         ((nodeA->getTag() == 1 && nodeB->getTag() == 2) ||
@@ -153,6 +166,7 @@ void HelloWorld::gameOver()
     auto finalScoreLabel = Label::createWithTTF("Final Score: " + std::to_string(score),
         "fonts/arial.ttf", 48);
     finalScoreLabel->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
+    finalScoreLabel->setTextColor(Color4B::GREEN);
     this->addChild(finalScoreLabel, 10);
 
     createRestartButton();
@@ -208,4 +222,32 @@ void HelloWorld::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event) {
     if (keyCode == EventKeyboard::KeyCode::KEY_SPACE && gameRunning) {
         player->jump();
     }
+}
+
+
+void HelloWorld::createGround() {
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+    Vec2 origin = Director::getInstance()->getVisibleOrigin();
+
+    auto groundSprite = Sprite::create();
+    groundSprite->setTextureRect(Rect(0, 0, visibleSize.width, 60));
+    groundSprite->setColor(Color3B(150, 75, 0));  
+
+    groundSprite->setPosition(Vec2(
+        visibleSize.width / 2 + origin.x,  
+        groundHeight / 2 + origin.y         
+    ));
+
+
+    auto groundBody = PhysicsBody::createBox(
+        Size(visibleSize.width, groundHeight),
+        PhysicsMaterial(0.1f, 0.0f, 1.0f)  
+    );
+    groundBody->setDynamic(false);  
+    groundBody->setCategoryBitmask(0x04);
+    groundBody->setContactTestBitmask(0x01);
+    groundSprite->setPhysicsBody(groundBody);
+
+    this->addChild(groundSprite);
+    
 }

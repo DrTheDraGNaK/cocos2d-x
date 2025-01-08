@@ -27,6 +27,9 @@ private:
     void createRestartButton();
     cocos2d::ui::Button* restartButton;
 
+    void createGround();
+    float groundHeight;
+
     cocos2d::PhysicsWorld* sceneWorld;
     Player* player;
     int score;
