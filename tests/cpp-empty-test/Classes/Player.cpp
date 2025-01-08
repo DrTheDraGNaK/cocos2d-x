@@ -20,8 +20,8 @@ bool Player::init(const std::string& filename)
     }
 
     jumping = false;
-    jumpForce = 600.0f;  
-    gravity = -1200.0f;
+    jumpForce = 400.0f;  
+    gravity = -1500.0f;
     groundY = 100.0f;
 
     auto body = PhysicsBody::createBox(this->getContentSize());

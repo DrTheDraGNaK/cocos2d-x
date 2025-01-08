@@ -100,20 +100,25 @@ void HelloWorld::update(float dt) {
     }
 }
 
+float HelloWorld::calculateObstacleSpeed() const {
+    float speed = 200.0f + score * 10.0f;
+    return std::min(speed, 600.0f); // Limiter à 600
+}
+
 void HelloWorld::spawnObstacle() {
     Size visibleSize = Director::getInstance()->getVisibleSize();
 
     auto obstacle = Obstacle::create("icons/Runic Dagger.png");
 
-    float randomOffsetY = CCRANDOM_0_1() * 150; 
+    float randomOffsetY = CCRANDOM_0_1() * 50;
     float obstacleSpawnY = groundHeight + (obstacle->getContentSize().height / 2) + randomOffsetY;
     obstacle->setPosition(Vec2(
         visibleSize.width + obstacle->getContentSize().width / 2,
         obstacleSpawnY
     ));
 
-    float randomSpeed = 200.0f + CCRANDOM_0_1() * 200.0f; 
-    obstacle->startMoving(randomSpeed);
+    float obstacleSpeed = calculateObstacleSpeed(); 
+    obstacle->startMoving(obstacleSpeed);          
     this->addChild(obstacle);
 }
 

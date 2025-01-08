@@ -16,8 +16,8 @@ public:
 private:
     void SetPhysicsWorld(cocos2d::PhysicsWorld* world) { sceneWorld = world; }
     bool onContactBegin(cocos2d::PhysicsContact& contact);
-    bool onContactEnd(cocos2d::PhysicsContact& contact);
     void update(float dt);
+    float calculateObstacleSpeed() const;
     void spawnObstacle();
     void gameOver();
     void restartGame();
