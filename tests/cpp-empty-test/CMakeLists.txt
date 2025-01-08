@@ -53,7 +53,6 @@ if(APPLE OR VS)
 endif()
 
 list(APPEND GAME_HEADER
-     Classes/AppMacros.h
      Classes/HelloWorldScene.h
      Classes/AppDelegate.h
      )
