@@ -28,6 +28,7 @@
 #include <string>
 
 #include "HelloWorldScene.h"
+#include "GameScene.h"
 #include "AppMacros.h"
 
 //Uncomment the following line to use localize manager
@@ -141,7 +142,7 @@ bool AppDelegate::applicationDidFinishLaunching()
     director->setAnimationInterval(1.0f / 60);
 
     // Create a scene. it's an autorelease object
-    auto scene = HelloWorld::scene();
+    auto scene = GameScene::createScene();
 
     // Run
     director->runWithScene(scene);
