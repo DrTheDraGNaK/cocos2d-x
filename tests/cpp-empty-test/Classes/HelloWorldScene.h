@@ -4,6 +4,7 @@
 #include "cocos2d.h"
 #include "Player.h"
 #include "Obstacle.h"
+#include "ui/CocosGUI.h"
 
 class HelloWorld : public cocos2d::Layer {
 public:
@@ -22,6 +23,9 @@ private:
     void saveHighScore();
     void loadHighScore();
     void onKeyPressed(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event* event);
+
+    void createRestartButton();
+    cocos2d::ui::Button* restartButton;
 
     cocos2d::PhysicsWorld* sceneWorld;
     Player* player;

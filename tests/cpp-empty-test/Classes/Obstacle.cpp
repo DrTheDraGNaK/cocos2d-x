@@ -23,7 +23,9 @@ bool Obstacle::init(const std::string& filename) {
     body->setContactTestBitmask(0x01); // Player category
     this->setPhysicsBody(body);
 
+    this->setTag(2); 
     moveSpeed = 300.0f;
+    passed = false;
 
     return true;
 }

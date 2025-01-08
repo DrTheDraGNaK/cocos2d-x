@@ -15,27 +15,30 @@ Scene* HelloWorld::createScene() {
     return scene;
 }
 
-bool HelloWorld::init() {
-    if (!Layer::init()) {
+bool HelloWorld::init() 
+{
+    if (!Layer::init()) 
+    {
         return false;
     }
+
+    restartButton = nullptr;
 
     Size visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    // Initialize game state
     score = 0;
     gameRunning = true;
     obstacleSpawnTime = 2.0f;
     timeSinceLastSpawn = 0;
 
-    // Load high score
     loadHighScore();
 
     // Create player
-    player = Player::create("icons/000.png");  // Remplacez par votre sprite
+    player = Player::create("icons/000.png");  
     player->setPosition(Vec2(visibleSize.width * 0.2f, 100));
     this->addChild(player);
+    player->setTag(1); 
 
     // Score labels
     scoreLabel = Label::createWithTTF("Score: 0", "fonts/arial.ttf", 24);
@@ -48,7 +51,6 @@ bool HelloWorld::init() {
     highScoreLabel->setTextColor(Color4B::GREEN);
     this->addChild(highScoreLabel);
 
-    // add "HelloWorld" splash screen"
     auto sprite = Sprite::create("icons/backgroundColorGrass.png");
 
     // position the sprite on the center of the screen
@@ -80,12 +82,23 @@ void HelloWorld::update(float dt) {
         spawnObstacle();
         timeSinceLastSpawn = 0;
     }
+
+    for (Node* node : this->getChildren()) {
+        Obstacle* obstacle = dynamic_cast<Obstacle*>(node);
+        if (obstacle && !obstacle->isPassed()) {
+            if (obstacle->getPositionX() < player->getPositionX()) {
+                obstacle->setPassed(true);
+                score++;
+                scoreLabel->setString("Score: " + std::to_string(score));
+            }
+        }
+    }
 }
 
 void HelloWorld::spawnObstacle() {
     Size visibleSize = Director::getInstance()->getVisibleSize();
 
-    auto obstacle = Obstacle::create("icons/Runic Dagger.png");  // Remplacez par votre sprite
+    auto obstacle = Obstacle::create("icons/Runic Dagger.png");  
     obstacle->setPosition(Vec2(visibleSize.width + obstacle->getContentSize().width / 2, 100));
     obstacle->startMoving(300.0f);
     this->addChild(obstacle);
@@ -95,39 +108,91 @@ bool HelloWorld::onContactBegin(PhysicsContact& contact) {
     auto nodeA = contact.getShapeA()->getBody()->getNode();
     auto nodeB = contact.getShapeB()->getBody()->getNode();
 
-    if ((nodeA->getTag() == 1 && nodeB->getTag() == 2) ||
-        (nodeA->getTag() == 2 && nodeB->getTag() == 1)) {
+    if ((nodeA && nodeB) &&
+        ((nodeA->getTag() == 1 && nodeB->getTag() == 2) ||
+            (nodeA->getTag() == 2 && nodeB->getTag() == 1))) {
         gameOver();
+        return true;
     }
 
-    return true;
+    return false;
 }
 
-void HelloWorld::gameOver() {
+void HelloWorld::gameOver() 
+{
+    if (!gameRunning) return;
+
     gameRunning = false;
 
-    if (score > highScore) {
+    player->getPhysicsBody()->setVelocity(Vec2::ZERO);
+
+    // Arrêtez tous les obstacles
+    for (Node* node : this->getChildren()) {
+        Obstacle* obstacle = dynamic_cast<Obstacle*>(node);
+        if (obstacle) {
+            obstacle->unscheduleUpdate();
+        }
+    }
+
+    if (score > highScore) 
+    {
         highScore = score;
         saveHighScore();
         highScoreLabel->setString("High Score: " + std::to_string(highScore));
     }
 
-    // Game over menu
-    auto gameOverLabel = Label::createWithTTF("Game Over!", "fonts/arial.ttf", 48);
-    gameOverLabel->setPosition(Director::getInstance()->getVisibleSize() / 2);
-    this->addChild(gameOverLabel);
+    auto visibleSize = Director::getInstance()->getVisibleSize();
 
-    auto restartButton = ui::Button::create("icons/Character1_face4.png");  // Remplacez par votre sprite
-    restartButton->setPosition(Vec2(gameOverLabel->getPositionX(),
-        gameOverLabel->getPositionY() - 100));
-    restartButton->addClickEventListener([this](Ref*) {
+    // Game Over Label
+    auto gameOverLabel = Label::createWithTTF("Game Over!", "fonts/arial.ttf", 72);
+    gameOverLabel->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 + 100));
+    gameOverLabel->setTextColor(Color4B::RED);
+    this->addChild(gameOverLabel, 10);
+
+    // Score Final
+    auto finalScoreLabel = Label::createWithTTF("Final Score: " + std::to_string(score),
+        "fonts/arial.ttf", 48);
+    finalScoreLabel->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
+    this->addChild(finalScoreLabel, 10);
+
+    createRestartButton();
+}
+
+void HelloWorld::createRestartButton() {
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+
+
+     restartButton = ui::Button::create();
+     restartButton->setTitleText("Restart");
+     restartButton->setTitleFontSize(48);
+     restartButton->setTitleColor(Color3B::WHITE);
+     restartButton->setContentSize(Size(200, 80));
+     restartButton->setColor(Color3B(51, 153, 255)); 
+
+    restartButton->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 - 100));
+
+    restartButton->addClickEventListener([this](Ref* sender) {
         restartGame();
         });
-    this->addChild(restartButton);
+
+    restartButton->runAction(
+        RepeatForever::create(
+            Sequence::create(
+                ScaleTo::create(0.5f, 1.1f),
+                ScaleTo::create(0.5f, 1.0f),
+                nullptr
+            )
+        )
+    );
+
+    this->addChild(restartButton, 10);
 }
 
 void HelloWorld::restartGame() {
-    Director::getInstance()->replaceScene(HelloWorld::createScene());
+    auto scene = HelloWorld::createScene();
+    Director::getInstance()->replaceScene(
+        TransitionFade::create(0.5f, scene, Color3B(0, 0, 0))
+    );
 }
 
 void HelloWorld::saveHighScore() {
