@@ -1,5 +1,6 @@
-#include "HelloWorldScene.h"
+﻿#include "HelloWorldScene.h"
 #include "ui/CocosGUI.h"
+#include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
 
@@ -36,6 +37,10 @@ bool HelloWorld::init()
     timeSinceLastSpawn = 0;
 
     loadHighScore();
+
+    if (AudioEngine::getPlayingAudioCount() == 0) {
+        AudioEngine::play2d("Sound/BackGroundMusic.mp3", true); 
+    }
 
     // Create player
     player = Player::create("icons/000.png");  
@@ -82,6 +87,8 @@ bool HelloWorld::init()
 void HelloWorld::update(float dt) {
     if (!gameRunning) return;
 
+    obstacleSpawnTime = std::max(2.0f - (score * 0.05f), MIN_OBSTACLE_SPAWN_TIME);
+
     timeSinceLastSpawn += dt;
     if (timeSinceLastSpawn >= obstacleSpawnTime) {
         spawnObstacle();
@@ -95,6 +102,7 @@ void HelloWorld::update(float dt) {
                 obstacle->setPassed(true);
                 score++;
                 scoreLabel->setString("Score: " + std::to_string(score));
+                AudioEngine::play2d("Sound/collect-points-190037.mp3"); 
             }
         }
     }
@@ -102,7 +110,7 @@ void HelloWorld::update(float dt) {
 
 float HelloWorld::calculateObstacleSpeed() const {
     float speed = 200.0f + score * 10.0f;
-    return std::min(speed, 600.0f); // Limiter � 600
+    return std::min(speed, 600.0f); // Limiter à 600
 }
 
 void HelloWorld::spawnObstacle() {
@@ -119,6 +127,10 @@ void HelloWorld::spawnObstacle() {
 
     float obstacleSpeed = calculateObstacleSpeed(); 
     obstacle->startMoving(obstacleSpeed);          
+    auto rotateAction = RotateBy::create(1.0f, 360.0f); // Rotation de 360° en 1 seconde
+    auto repeatRotate = RepeatForever::create(rotateAction);
+    obstacle->runAction(repeatRotate);
+
     this->addChild(obstacle);
 }
 
@@ -145,7 +157,7 @@ void HelloWorld::gameOver()
 
     player->getPhysicsBody()->setVelocity(Vec2::ZERO);
 
-    // Arr�tez tous les obstacles
+    // Arrêtez tous les obstacles
     for (Node* node : this->getChildren()) {
         Obstacle* obstacle = dynamic_cast<Obstacle*>(node);
         if (obstacle) {
@@ -175,6 +187,8 @@ void HelloWorld::gameOver()
     finalScoreLabel->setTextColor(Color4B::GREEN);
     this->addChild(finalScoreLabel, 10);
 
+
+    AudioEngine::play2d("Sound/pop-sound-effect-197846.mp3");
     createRestartButton();
 }
 
@@ -227,6 +241,7 @@ void HelloWorld::loadHighScore() {
 void HelloWorld::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event) {
     if (keyCode == EventKeyboard::KeyCode::KEY_SPACE && gameRunning) {
         player->jump();
+        AudioEngine::play2d("Sound/retro-jump-3-236683.mp3");
     }
 }
 
@@ -235,25 +250,33 @@ void HelloWorld::createGround() {
     Size visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    auto groundSprite = Sprite::create();
-    groundSprite->setTextureRect(Rect(0, 0, visibleSize.width, 60));
-    groundSprite->setColor(Color3B(150, 75, 0));  
+    // Charger l'image pour le sol
+    auto groundSprite = Sprite::create("icons/4.Ground.png");
+    groundSprite->setAnchorPoint(Vec2(0.5f, 0.5f)); // Par défaut, centre l'image
+    groundSprite->setScaleX(visibleSize.width / groundSprite->getContentSize().width); // Ajuster la largeur
+    groundSprite->setScaleY(500.0f / groundSprite->getContentSize().height); // Ajuster la hauteur
 
     groundSprite->setPosition(Vec2(
-        visibleSize.width / 2 + origin.x,  
-        groundHeight / 2 + origin.y         
+        visibleSize.width / 2 + origin.x,
+        groundHeight  + 120.0f
     ));
 
-
+    // Créer un corps physique pour le sol
     auto groundBody = PhysicsBody::createBox(
         Size(visibleSize.width, groundHeight),
-        PhysicsMaterial(0.1f, 0.0f, 1.0f)  
+        PhysicsMaterial(0.1f, 0.0f, 1.0f)
     );
-    groundBody->setDynamic(false);  
+    groundBody->setDynamic(false);
     groundBody->setCategoryBitmask(0x04);
     groundBody->setContactTestBitmask(0x01);
     groundSprite->setPhysicsBody(groundBody);
 
+    // Ajouter le sprite comme enfant
     this->addChild(groundSprite);
     
 }
+
+//void HelloWorld::onExit() {
+//    Layer::onExit();
+//    AudioEngine::end(); // Libère les ressources audio
+//}

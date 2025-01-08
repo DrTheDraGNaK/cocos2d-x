@@ -12,6 +12,7 @@ public:
     virtual bool init();
     void menuCloseCallback(cocos2d::Ref* pSender);
     CREATE_FUNC(HelloWorld);
+    const float MIN_OBSTACLE_SPAWN_TIME = 0.5f;
 
 private:
     void SetPhysicsWorld(cocos2d::PhysicsWorld* world) { sceneWorld = world; }
@@ -29,6 +30,7 @@ private:
     cocos2d::ui::Button* restartButton;
 
     void createGround();
+    //void onExit();
     float groundHeight;
 
     cocos2d::PhysicsWorld* sceneWorld;
