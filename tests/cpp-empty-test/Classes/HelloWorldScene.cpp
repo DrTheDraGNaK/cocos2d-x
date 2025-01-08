@@ -1,71 +1,52 @@
 #include "HelloWorldScene.h"
+#include "ui/CocosGUI.h"
 
 USING_NS_CC;
 
-Scene* HelloWorld::createScene()
-{
-    // 'scene' is an autorelease object
+Scene* HelloWorld::createScene() {
     auto scene = Scene::createWithPhysics();
-    scene->getPhysicsWorld()->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
+    scene->getPhysicsWorld()->setGravity(Vec2(0, -980));
+    scene->getPhysicsWorld()->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_NONE);
 
-    // 'layer' is an autorelease object
     auto layer = HelloWorld::create();
     layer->SetPhysicsWorld(scene->getPhysicsWorld());
-
-    // add layer as a child to scene
     scene->addChild(layer);
 
-    // return the scene
     return scene;
 }
 
-// on "init" you need to initialize your instance
-bool HelloWorld::init()
-{
-    //////////////////////////////
-    // 1. super init first
-    if (!Layer::init())
-    {
+bool HelloWorld::init() {
+    if (!Layer::init()) {
         return false;
     }
 
     Size visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    /////////////////////////////
-    // 2. add a menu item with "X" image, which is clicked to quit the program
-    //    you may modify it.
+    // Initialize game state
+    score = 0;
+    gameRunning = true;
+    obstacleSpawnTime = 2.0f;
+    timeSinceLastSpawn = 0;
 
-    // add a "close" icon to exit the progress. it's an autorelease object
-    auto closeItem = MenuItemImage::create(
-        "icons/Sign.png",
-        "icons/Sign.png",
-        CC_CALLBACK_1(HelloWorld::menuCloseCallback, this));
+    // Load high score
+    loadHighScore();
 
-    closeItem->setPosition(Vec2(origin.x + visibleSize.width - closeItem->getContentSize().width / 2,
-        origin.y + closeItem->getContentSize().height / 2));
+    // Create player
+    player = Player::create("icons/000.png");  // Remplacez par votre sprite
+    player->setPosition(Vec2(visibleSize.width * 0.2f, 100));
+    this->addChild(player);
 
-    // create menu, it's an autorelease object
-    auto menu = Menu::create(closeItem, NULL);
-    menu->setPosition(Vec2::ZERO);
-    this->addChild(menu, 1);
+    // Score labels
+    scoreLabel = Label::createWithTTF("Score: 0", "fonts/arial.ttf", 24);
+    scoreLabel->setPosition(Vec2(visibleSize.width * 0.5f, visibleSize.height * 0.9f));
+    scoreLabel->setTextColor(Color4B::MAGENTA);
+    this->addChild(scoreLabel);
 
-    /////////////////////////////
-    // 3. add your codes below...
-
-    // add a label shows "Hello World"
-    // create and initialize a label
-
-    auto label = Label::createWithTTF("Jehem World", "fonts/arial.ttf", 24);
-
-    // position the label on the center of the screen
-    label->setPosition(Vec2(origin.x + visibleSize.width / 2,
-        origin.y + visibleSize.height - label->getContentSize().height));
-
-    label->setTextColor(Color4B::RED);
-
-    // add the label as a child to this layer
-    this->addChild(label, 1);
+    highScoreLabel = Label::createWithTTF("High Score: " + std::to_string(highScore), "fonts/arial.ttf", 24);
+    highScoreLabel->setPosition(Vec2(visibleSize.width * 0.8f, visibleSize.height * 0.9f));
+    highScoreLabel->setTextColor(Color4B::GREEN);
+    this->addChild(highScoreLabel);
 
     // add "HelloWorld" splash screen"
     auto sprite = Sprite::create("icons/backgroundColorGrass.png");
@@ -74,28 +55,92 @@ bool HelloWorld::init()
     sprite->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
 
     // add the sprite as a child to this layer
-    this->addChild(sprite, 0);
+    this->addChild(sprite, -3);
 
-    auto edgeBody = PhysicsBody::createEdgeBox(visibleSize, PHYSICSBODY_MATERIAL_DEFAULT, 3);
-    auto edgeNode = Node::create();
-    edgeNode->setPosition(Point(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y) ));
-    edgeNode->setPhysicsBody(edgeBody);
-    this->addChild(edgeNode);
+    // Contact listener
+    auto contactListener = EventListenerPhysicsContact::create();
+    contactListener->onContactBegin = CC_CALLBACK_1(HelloWorld::onContactBegin, this);
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener, this);
+
+    // Keyboard listener
+    auto keyboardListener = EventListenerKeyboard::create();
+    keyboardListener->onKeyPressed = CC_CALLBACK_2(HelloWorld::onKeyPressed, this);
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(keyboardListener, this);
+
+    this->scheduleUpdate();
 
     return true;
 }
 
+void HelloWorld::update(float dt) {
+    if (!gameRunning) return;
 
-void HelloWorld::menuCloseCallback(Ref* pSender)
-{
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WP8) || (CC_TARGET_PLATFORM == CC_PLATFORM_WINRT)
-    MessageBox("You pressed the close button. Windows Store Apps do not implement a close button.", "Alert");
-    return;
-#endif
+    timeSinceLastSpawn += dt;
+    if (timeSinceLastSpawn >= obstacleSpawnTime) {
+        spawnObstacle();
+        timeSinceLastSpawn = 0;
+    }
+}
 
-    Director::getInstance()->end();
+void HelloWorld::spawnObstacle() {
+    Size visibleSize = Director::getInstance()->getVisibleSize();
 
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
-    exit(0);
-#endif
+    auto obstacle = Obstacle::create("icons/Runic Dagger.png");  // Remplacez par votre sprite
+    obstacle->setPosition(Vec2(visibleSize.width + obstacle->getContentSize().width / 2, 100));
+    obstacle->startMoving(300.0f);
+    this->addChild(obstacle);
+}
+
+bool HelloWorld::onContactBegin(PhysicsContact& contact) {
+    auto nodeA = contact.getShapeA()->getBody()->getNode();
+    auto nodeB = contact.getShapeB()->getBody()->getNode();
+
+    if ((nodeA->getTag() == 1 && nodeB->getTag() == 2) ||
+        (nodeA->getTag() == 2 && nodeB->getTag() == 1)) {
+        gameOver();
+    }
+
+    return true;
+}
+
+void HelloWorld::gameOver() {
+    gameRunning = false;
+
+    if (score > highScore) {
+        highScore = score;
+        saveHighScore();
+        highScoreLabel->setString("High Score: " + std::to_string(highScore));
+    }
+
+    // Game over menu
+    auto gameOverLabel = Label::createWithTTF("Game Over!", "fonts/arial.ttf", 48);
+    gameOverLabel->setPosition(Director::getInstance()->getVisibleSize() / 2);
+    this->addChild(gameOverLabel);
+
+    auto restartButton = ui::Button::create("icons/Character1_face4.png");  // Remplacez par votre sprite
+    restartButton->setPosition(Vec2(gameOverLabel->getPositionX(),
+        gameOverLabel->getPositionY() - 100));
+    restartButton->addClickEventListener([this](Ref*) {
+        restartGame();
+        });
+    this->addChild(restartButton);
+}
+
+void HelloWorld::restartGame() {
+    Director::getInstance()->replaceScene(HelloWorld::createScene());
+}
+
+void HelloWorld::saveHighScore() {
+    UserDefault::getInstance()->setIntegerForKey("highscore", highScore);
+    UserDefault::getInstance()->flush();
+}
+
+void HelloWorld::loadHighScore() {
+    highScore = UserDefault::getInstance()->getIntegerForKey("highscore", 0);
+}
+
+void HelloWorld::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event) {
+    if (keyCode == EventKeyboard::KeyCode::KEY_SPACE && gameRunning) {
+        player->jump();
+    }
 }

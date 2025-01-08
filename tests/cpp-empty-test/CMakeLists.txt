@@ -54,10 +54,14 @@ endif()
 
 list(APPEND GAME_HEADER
      Classes/HelloWorldScene.h
+     Classes/Player.h
+     Classes/Obstacle.h
      Classes/AppDelegate.h
      )
 list(APPEND GAME_SOURCE
      Classes/AppDelegate.cpp
+     Classes/Player.cpp
+     Classes/Obstacle.cpp
      Classes/HelloWorldScene.cpp
      )
 
