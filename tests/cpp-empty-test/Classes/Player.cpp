@@ -22,6 +22,7 @@ bool Player::init(const std::string& filename)
     jumping = false;
     jumpForce = 600.0f;  
     gravity = -1200.0f;
+    groundY = 100.0f;
 
     auto body = PhysicsBody::createBox(this->getContentSize());
     body->setDynamic(true);
@@ -52,6 +53,10 @@ void Player::jump() {
 void Player::update(float dt) {
     if (this->getPositionY() <= groundY) {
         this->setPositionY(groundY);
+        this->getPhysicsBody()->setGravityEnable(false); // Désactiver la gravité
         jumping = false;
+    }
+    else {
+        this->getPhysicsBody()->setGravityEnable(true);  // Réactiver la gravité
     }
 }

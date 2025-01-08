@@ -68,6 +68,7 @@ bool HelloWorld::init()
     contactListener->onContactBegin = CC_CALLBACK_1(HelloWorld::onContactBegin, this);
     _eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener, this);
 
+
     // Keyboard listener
     auto keyboardListener = EventListenerKeyboard::create();
     keyboardListener->onKeyPressed = CC_CALLBACK_2(HelloWorld::onKeyPressed, this);
@@ -102,24 +103,23 @@ void HelloWorld::update(float dt) {
 void HelloWorld::spawnObstacle() {
     Size visibleSize = Director::getInstance()->getVisibleSize();
 
-    auto obstacle = Obstacle::create("icons/Runic Dagger.png");  
+    auto obstacle = Obstacle::create("icons/Runic Dagger.png");
 
-
-    float obstacleSpawnY = groundHeight + (obstacle->getContentSize().height / 2);
+    float randomOffsetY = CCRANDOM_0_1() * 150; 
+    float obstacleSpawnY = groundHeight + (obstacle->getContentSize().height / 2) + randomOffsetY;
     obstacle->setPosition(Vec2(
         visibleSize.width + obstacle->getContentSize().width / 2,
         obstacleSpawnY
     ));
 
-    obstacle->startMoving(300.0f);
+    float randomSpeed = 200.0f + CCRANDOM_0_1() * 200.0f; 
+    obstacle->startMoving(randomSpeed);
     this->addChild(obstacle);
 }
 
 bool HelloWorld::onContactBegin(PhysicsContact& contact) {
     auto nodeA = contact.getShapeA()->getBody()->getNode();
     auto nodeB = contact.getShapeB()->getBody()->getNode();
-
-
 
     if ((nodeA && nodeB) &&
         ((nodeA->getTag() == 1 && nodeB->getTag() == 2) ||
@@ -130,6 +130,7 @@ bool HelloWorld::onContactBegin(PhysicsContact& contact) {
 
     return false;
 }
+
 
 void HelloWorld::gameOver() 
 {

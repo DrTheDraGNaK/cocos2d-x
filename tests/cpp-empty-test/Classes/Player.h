@@ -8,6 +8,8 @@ public:
     static Player* create(const std::string& filename);
     virtual bool init(const std::string& filename);
 
+    void setGrounded(bool grounded);
+
     void jump();
     void update(float dt);
     bool isJumping() const { return jumping; }
